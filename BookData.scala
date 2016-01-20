@@ -1,54 +1,67 @@
 import scala.collection.mutable.HashMap
 import scala.io.Source
 import scala.math.BigDecimal
+import Fields._
 
-class BookData(a: Long, b: String, c: String, d: Long, side: String) {
-	var time   = a
-	var id     = b
-	var price  = BigDecimal(c)
-	var shares = d
-	var isBuy = side match { case "B" => true; case _ => false }
+case class BookData(var time: Long,
+					val id: String,
+					val side: String,
+					val price: BigDecimal,
+					var size: Long
+					) {
+	
+	def isBuy = side == "B"
+
 }
 
-	object BookData {
-		
-		def main(args: Array[String]) = {
-			val start = System.nanoTime()
-			if(args.length == 0) {
-				System.err.println("No target-size set")
-				System.exit(1)
-			}
+object Fields {
+	val Time   = 0
+	val Action = 1
+	val Id     = 2
+	val Side   = 3
+	val Price  = 4
+	val Size   = 5
+}
 
-			var buyBook = new Book("B", args(0).toLong)
-			var sellBook = new Book("S", args(0).toLong)
-			val input = Source.stdin
+object BookData {
+	
+	def main(args: Array[String]) = {
+		val start = System.nanoTime()
+		if(args.length == 0) {
+			System.err.println("No target-size set")
+			System.exit(1)
+		}
 
-			try {
-				for(line <- input.getLines()) {
-					var a = line.split(' ')
+		var buyBook = new Book("B", args(0).toLong)
+		var sellBook = new Book("S", args(0).toLong)
+		val log = Source.stdin
 
-					a(1) match {
-						case "A" => a(3) match {
-							case "B" => buyBook.add(buyBook.newOrder(a))
-							case "S" => sellBook.add(sellBook.newOrder(a))
-						}
-						case "R" => buyBook.book.get(a(2)) match {
-							case Some(b) => buyBook.remove(a(2), a(3).toLong, a(0).toLong)
-							case None => sellBook.remove(a(2), a(3).toLong, a(0).toLong)
-						}
+		try {
+			for(line <- log.getLines()) {
+				var input = line.split(' ')
+
+				input(Action) match {
+					case "A" => input(Side) match {
+						case "B" => buyBook.add(buyBook.newOrder(input))
+						case "S" => sellBook.add(sellBook.newOrder(input))
+					}
+					case "R" => buyBook.book.get(input(Id)) match {
+						case Some(b) => buyBook.remove(input(Id), input(Side).toLong, input(Time).toLong)
+						case None => sellBook.remove(input(Id), input(Side).toLong, input(Time).toLong)
 					}
 				}
-			} finally {
-				input.close()
 			}
-			
-			getExecTime(start)
+		} finally {
+			log.close()
 		}
-
-		def getExecTime(start: Long) = {
-			val time = System.nanoTime() - start
-			println("Execution time: " + time / 1000000000.0)
-			println(11190024 / (time / 1000000000.0))
-		}
-
+		
+		getExecTime(start)
 	}
+
+	def getExecTime(start: Long) = {
+		val time = System.nanoTime() - start
+		println("Execution time: " + time / 1000000000.0)
+		println(11190024 / (time / 1000000000.0))
+	}
+
+}

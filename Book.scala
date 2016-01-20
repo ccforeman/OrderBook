@@ -1,11 +1,11 @@
 import scala.collection.mutable.HashMap
 import scala.util.control.Breaks._
 import scala.math.BigDecimal
+import Fields._
 
 class Book(side: String, targetSize: Long) {
 	val book = HashMap[String, BookData]()
-	val isBuy = side match { case "B" => true; case _ => false }
-	val transSide = side match { case "B" => "S"; case "S" => "B"}
+	val transactionSide = side match { case "B" => "S"; case "S" => "B" }
 	val target = targetSize
 
 	var oldExpense = BigDecimal("0.0")
@@ -16,21 +16,28 @@ class Book(side: String, targetSize: Long) {
 	var total: Long = 0
 	var currentTime: Long = 0
 
-	def newOrder(a: Array[String]) = new BookData(a(0).toLong, a(2), a(4), a(5).toLong, a(3)) 
-
+	def newOrder(input: Array[String]) = { 
+		BookData(input(Time).toLong,
+				 input(Id),
+			  	 input(Side),
+				 BigDecimal(input(Price)),
+				 input(Size).toLong
+				)
+	}
+	
 	def add(entry: BookData) = {
 		book += (entry.id -> entry)
-		total += entry.shares
+		total += entry.size
 		currentTime = entry.time
 		checkAndUpdate()
 	}
 
-	def remove(id: String, amount: Long, time: Long) = {
+	def remove(id: String, amount: Long, newTime: Long) = {
 		book.get(id) match {
-			case Some(o) => o.shares -= amount
-							o.time = time
-							currentTime = time
-							if(o.shares <= 0)
+			case Some(o) => o.size -= amount
+							o.time = newTime
+							currentTime = newTime
+							if(o.size <= 0)
 								book.remove(o.id)
 			case None => println("Error: No Removal. Order Not Found.")
 		}
@@ -43,7 +50,7 @@ class Book(side: String, targetSize: Long) {
 		if (total >= target) {
 			oldExpense = newExpense
 			oldOutcome = newOutcome
-			newOutcome = transSide
+			newOutcome = transactionSide
 			newExpense = getExpense()
 		} else {
 			oldOutcome = newOutcome
@@ -58,19 +65,25 @@ class Book(side: String, targetSize: Long) {
 	def getExpense(): BigDecimal = {
 		var shares = target
 		var curExpense = BigDecimal("0.0")
-		val buf = isBuy match {
-			case true => book.toSeq.sortBy(-_._2.price)
-			case false => book.toSeq.sortBy(_._2.price)
+
+		val func = isBuy match {
+			case true => (m: HashMap[String,BookData]) => m.maxBy(_._2.price)
+			case false => (m: HashMap[String,BookData]) => m.minBy(_._2.price)
 		}
+
+		var mapCopy = book.clone()
+
 		breakable {
-			buf.foreach{ order => 
-				if((shares - order._2.shares) > 0) {
-					curExpense += (order._2.shares * order._2.price)
-					shares -= order._2.shares
+			while(shares > 0) {
+				var order = func(mapCopy)
+				if((shares - order._2.size) > 0) {
+					curExpense += (order._2.size * order._2.price)
+					shares -= order._2.size
 				} else {
 					curExpense += (shares * order._2.price)
-					shares -= order._2.shares
+					shares -= order._2.size
 				}
+				mapCopy.remove(order._1)
 				if(shares <= 0)
 					break
 			}
@@ -79,11 +92,17 @@ class Book(side: String, targetSize: Long) {
 	}
 
 	def printOutput = {
-		if(newOutcome == transSide)
-			println(currentTime + " " + transSide + " " + newExpense.toString) 
+		val str = StringBuilder.newBuilder
 
-		else
-			println(currentTime + " " + transSide + " " + "NA")
+		if(newOutcome == transactionSide) {
+			str.append(currentTime).append(" ").append(transactionSide).append(" ").append(newExpense.toString)
+			println(str)
+		} else {
+			str.append(currentTime).append(" ").append(transactionSide).append(" ").append("NA")
+			println(str)
+		}
 	}
+
+	def isBuy = side == "B"
 
 }
