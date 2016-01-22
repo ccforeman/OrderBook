@@ -3,25 +3,6 @@ import scala.collection.mutable.HashMap
 import scala.io.Source
 import scala.math.BigDecimal
 
-case class Order(	var time: Long,
-					val id: String,
-					val side: String,
-					val price: BigDecimal,
-					var size: Long
-					) {
-	
-	def isBuy = side == "B"
-}
-
-object Fields {
-	val Time   = 0
-	val Action = 1
-	val Id     = 2
-	val Side   = 3
-	val Price  = 4
-	val Size   = 5
-}
-
 object Pricer {
 	
 	def main(args: Array[String]) = {

@@ -3,6 +3,15 @@ import scala.util.control.Breaks._
 import scala.math.BigDecimal
 import Fields._
 
+object Fields {
+	val Time   = 0
+	val Action = 1
+	val Id     = 2
+	val Side   = 3
+	val Price  = 4
+	val Size   = 5
+}
+
 case class OrderBook (target: Long) {
 	var buy = new BookSide("B", target)
 	var sell = new BookSide("S", target)
@@ -10,8 +19,8 @@ case class OrderBook (target: Long) {
 	def processInput(input: Array[String]){
 		input(Action) match {
 		    case "A" => input(Side) match {
-						case "B" => buy.add(buy.newOrder(input))
-						case "S" => sell.add(sell.newOrder(input))
+						case "B" => buy.add(Order(input(Time).toLong, input(Id), input(Side), BigDecimal(input(Price)), input(Size).toLong))
+						case "S" => sell.add(Order(input(Time).toLong, input(Id), input(Side), BigDecimal(input(Price)), input(Size).toLong))
 					}
 			case "R" => buy.book.get(input(Id)) match {
 						case Some(b) => buy.remove(input(Id), input(Side).toLong, input(Time).toLong)
@@ -21,10 +30,20 @@ case class OrderBook (target: Long) {
 	}
 }
 
+case class Order(	var time: Long,
+					val id: String,
+					val side: String,
+					val price: BigDecimal,
+					var size: Long
+					) {
+	
+	def isBuy = side == "B"
+}
+
 class BookSide(side: String, targetSize: Long) {
-	val book = HashMap[String, Order]()
-	val transactionSide = side match { case "B" => "S"; case "S" => "B" }
-	val target = targetSize
+	lazy val book = HashMap[String, Order]()
+	lazy val transactionSide = side match { case "B" => "S"; case "S" => "B" }
+	lazy val target = targetSize
 
 	var oldExpense = BigDecimal("0.0")
 	var newExpense = BigDecimal("0.0")
@@ -33,15 +52,6 @@ class BookSide(side: String, targetSize: Long) {
 
 	var total: Long = 0
 	var currentTime: Long = 0
-
-	def newOrder(input: Array[String]): Order = { 
-			Order(input(Time).toLong,
-				 input(Id),
-			  	 input(Side),
-				 BigDecimal(input(Price)),
-				 input(Size).toLong
-				)
-	}
 	
 	def add(entry: Order) = {
 		book += (entry.id -> entry)
@@ -84,7 +94,7 @@ class BookSide(side: String, targetSize: Long) {
 		var shares = target
 		var curExpense = BigDecimal("0.0")
 
-		val func = isBuy match {
+		lazy val func = isBuy match {
 			case true => (m: HashMap[String, Order]) => m.maxBy(_._2.price)
 			case false => (m: HashMap[String, Order]) => m.minBy(_._2.price)
 		}
@@ -110,7 +120,7 @@ class BookSide(side: String, targetSize: Long) {
 	}
 
 	def printOutput = {
-		val str = StringBuilder.newBuilder
+		lazy val str = StringBuilder.newBuilder
 
 		if(newOutcome == transactionSide) {
 			str.append(currentTime).append(" ").append(transactionSide).append(" ").append(newExpense)
