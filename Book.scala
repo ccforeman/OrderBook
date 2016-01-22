@@ -3,6 +3,8 @@ import scala.util.control.Breaks._
 import scala.math.BigDecimal
 import Fields._
 
+// No longer using this
+
 case class OrderBook (target: Long) {
 	var buy = new BookSide("B", target)
 	var sell = new BookSide("S", target)

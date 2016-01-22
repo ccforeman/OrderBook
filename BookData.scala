@@ -3,6 +3,8 @@ import scala.collection.mutable.HashMap
 import scala.io.Source
 import scala.math.BigDecimal
 
+// No longer using this
+
 case class Order(	var time: Long,
 					val id: String,
 					val side: String,
