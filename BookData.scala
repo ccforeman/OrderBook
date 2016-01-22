@@ -1,9 +1,9 @@
+import Fields._
 import scala.collection.mutable.HashMap
 import scala.io.Source
 import scala.math.BigDecimal
-import Fields._
 
-case class BookData(var time: Long,
+case class Order(	var time: Long,
 					val id: String,
 					val side: String,
 					val price: BigDecimal,
@@ -11,7 +11,6 @@ case class BookData(var time: Long,
 					) {
 	
 	def isBuy = side == "B"
-
 }
 
 object Fields {
@@ -23,38 +22,24 @@ object Fields {
 	val Size   = 5
 }
 
-object BookData {
+object Pricer {
 	
 	def main(args: Array[String]) = {
 		val start = System.nanoTime()
+
 		if(args.length == 0) {
 			System.err.println("No target-size set")
 			System.exit(1)
 		}
 
-		var buyBook = new Book("B", args(0).toLong)
-		var sellBook = new Book("S", args(0).toLong)
+		var book = OrderBook(args(0).toLong)
 		val log = Source.stdin
 
-		try {
-			for(line <- log.getLines()) {
-				var input = line.split(' ')
-
-				input(Action) match {
-					case "A" => input(Side) match {
-						case "B" => buyBook.add(buyBook.newOrder(input))
-						case "S" => sellBook.add(sellBook.newOrder(input))
-					}
-					case "R" => buyBook.book.get(input(Id)) match {
-						case Some(b) => buyBook.remove(input(Id), input(Side).toLong, input(Time).toLong)
-						case None => sellBook.remove(input(Id), input(Side).toLong, input(Time).toLong)
-					}
-				}
-			}
-		} finally {
-			log.close()
+		for(line <- log.getLines()) {
+			var input = line.split("\\s")
+			book.processInput(input)
 		}
-		
+		log.close()
 		getExecTime(start)
 	}
 

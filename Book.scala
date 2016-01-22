@@ -3,8 +3,26 @@ import scala.util.control.Breaks._
 import scala.math.BigDecimal
 import Fields._
 
-class Book(side: String, targetSize: Long) {
-	val book = HashMap[String, BookData]()
+case class OrderBook (target: Long) {
+	var buy = new BookSide("B", target)
+	var sell = new BookSide("S", target)
+
+	def processInput(input: Array[String]){
+		input(Action) match {
+		    case "A" => input(Side) match {
+						case "B" => buy.add(buy.newOrder(input))
+						case "S" => sell.add(sell.newOrder(input))
+					}
+			case "R" => buy.book.get(input(Id)) match {
+						case Some(b) => buy.remove(input(Id), input(Side).toLong, input(Time).toLong)
+						case None => sell.remove(input(Id), input(Side).toLong, input(Time).toLong)
+					}
+		}
+	}
+}
+
+class BookSide(side: String, targetSize: Long) {
+	val book = HashMap[String, Order]()
 	val transactionSide = side match { case "B" => "S"; case "S" => "B" }
 	val target = targetSize
 
@@ -16,8 +34,8 @@ class Book(side: String, targetSize: Long) {
 	var total: Long = 0
 	var currentTime: Long = 0
 
-	def newOrder(input: Array[String]) = { 
-		BookData(input(Time).toLong,
+	def newOrder(input: Array[String]): Order = { 
+			Order(input(Time).toLong,
 				 input(Id),
 			  	 input(Side),
 				 BigDecimal(input(Price)),
@@ -25,11 +43,11 @@ class Book(side: String, targetSize: Long) {
 				)
 	}
 	
-	def add(entry: BookData) = {
+	def add(entry: Order) = {
 		book += (entry.id -> entry)
 		total += entry.size
 		currentTime = entry.time
-		checkAndUpdate()
+		update()
 	}
 
 	def remove(id: String, amount: Long, newTime: Long) = {
@@ -43,10 +61,10 @@ class Book(side: String, targetSize: Long) {
 		}
 
 		total -= amount
-		checkAndUpdate()
+		update()
 	}
 
-	def checkAndUpdate() = {
+	def update() = {
 		if (total >= target) {
 			oldExpense = newExpense
 			oldOutcome = newOutcome
@@ -67,8 +85,8 @@ class Book(side: String, targetSize: Long) {
 		var curExpense = BigDecimal("0.0")
 
 		val func = isBuy match {
-			case true => (m: HashMap[String,BookData]) => m.maxBy(_._2.price)
-			case false => (m: HashMap[String,BookData]) => m.minBy(_._2.price)
+			case true => (m: HashMap[String, Order]) => m.maxBy(_._2.price)
+			case false => (m: HashMap[String, Order]) => m.minBy(_._2.price)
 		}
 
 		var mapCopy = book.clone()
@@ -95,7 +113,7 @@ class Book(side: String, targetSize: Long) {
 		val str = StringBuilder.newBuilder
 
 		if(newOutcome == transactionSide) {
-			str.append(currentTime).append(" ").append(transactionSide).append(" ").append(newExpense.toString)
+			str.append(currentTime).append(" ").append(transactionSide).append(" ").append(newExpense)
 			println(str)
 		} else {
 			str.append(currentTime).append(" ").append(transactionSide).append(" ").append("NA")
