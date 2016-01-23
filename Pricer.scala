@@ -1,5 +1,4 @@
 import Fields._
-import scala.collection.mutable.HashMap
 import scala.io.Source
 import scala.math.BigDecimal
 

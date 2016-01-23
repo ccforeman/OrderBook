@@ -1,4 +1,4 @@
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.TreeSet
 import scala.util.control.Breaks._
 import scala.math.BigDecimal
 import Fields._
@@ -22,7 +22,7 @@ case class OrderBook (target: Long) {
 						case "B" => buy.add(Order(input(Time).toLong, input(Id), input(Side), BigDecimal(input(Price)), input(Size).toLong))
 						case "S" => sell.add(Order(input(Time).toLong, input(Id), input(Side), BigDecimal(input(Price)), input(Size).toLong))
 					}
-			case "R" => buy.book.get(input(Id)) match {
+			case "R" => buy.book.find(order => order.id == input(Id)) match {
 						case Some(b) => buy.remove(input(Id), input(Side).toLong, input(Time).toLong)
 						case None => sell.remove(input(Id), input(Side).toLong, input(Time).toLong)
 					}
@@ -41,9 +41,20 @@ case class Order(	var time: Long,
 }
 
 class BookSide(side: String, targetSize: Long) {
-	lazy val book = HashMap[String, Order]()
-	lazy val transactionSide = side match { case "B" => "S"; case "S" => "B" }
-	lazy val target = targetSize
+	
+	val sellOrdering = Ordering.by {o: Order => (o.price, o.id) }
+	val buyOrdering = sellOrdering.reverse
+
+	var book: TreeSet[Order] = _
+	
+	if(isBuy)
+		book = TreeSet[Order]()(buyOrdering)
+	else
+		book = TreeSet[Order]()(sellOrdering)
+
+
+	val transactionSide = side match { case "B" => "S"; case "S" => "B" }
+	val target = targetSize
 
 	var oldExpense = BigDecimal("0.0")
 	var newExpense = BigDecimal("0.0")
@@ -54,19 +65,19 @@ class BookSide(side: String, targetSize: Long) {
 	var currentTime: Long = 0
 	
 	def add(entry: Order) = {
-		book += (entry.id -> entry)
+		book += entry
 		total += entry.size
 		currentTime = entry.time
 		update()
 	}
 
 	def remove(id: String, amount: Long, newTime: Long) = {
-		book.get(id) match {
+		book.find(order => order.id == id) match {
 			case Some(o) => o.size -= amount
 							o.time = newTime
 							currentTime = newTime
 							if(o.size <= 0)
-								book.remove(o.id)
+								book.remove(o)
 			case None => println("Error: No Removal. Order Not Found.")
 		}
 
@@ -79,48 +90,31 @@ class BookSide(side: String, targetSize: Long) {
 			oldExpense = newExpense
 			oldOutcome = newOutcome
 			newOutcome = transactionSide
-			newExpense = getExpense()
+			newExpense = getExpense(target, book.toStream)
 		} else {
+			oldExpense = newExpense
 			oldOutcome = newOutcome
 			newOutcome = "NA"
 			newExpense = BigDecimal("0.0")
 		}
 
 		if((newExpense != oldExpense) || (newOutcome != oldOutcome))
-			printOutput
+			 printOutput
 	}
 
-	def getExpense(): BigDecimal = {
-		var shares = target
-		var curExpense = BigDecimal("0.0")
+	def getExpense(shares: Long, bookCopy: Stream[Order]): BigDecimal = {
 
-		lazy val func = isBuy match {
-			case true => (m: HashMap[String, Order]) => m.maxBy(_._2.price)
-			case false => (m: HashMap[String, Order]) => m.minBy(_._2.price)
-		}
+		if (shares <= 0 || bookCopy.isEmpty)
+			0
+		else if((shares - bookCopy.head.size) > 0)
+			(bookCopy.head.price * bookCopy.head.size) + getExpense(shares - bookCopy.head.size, bookCopy.tail)
+		else
+			(bookCopy.head.price * shares) + getExpense(shares - bookCopy.head.size, bookCopy.tail)
 
-		var mapCopy = book.clone()
-
-		breakable {
-			while(shares > 0) {
-				var order = func(mapCopy)
-				if((shares - order._2.size) > 0) {
-					curExpense += (order._2.size * order._2.price)
-					shares -= order._2.size
-				} else {
-					curExpense += (shares * order._2.price)
-					shares -= order._2.size
-				}
-				mapCopy.remove(order._1)
-				if(shares <= 0)
-					break
-			}
-		}
-		curExpense
 	}
 
 	def printOutput = {
-		lazy val str = StringBuilder.newBuilder
+		val str = StringBuilder.newBuilder
 
 		if(newOutcome == transactionSide) {
 			str.append(currentTime).append(" ").append(transactionSide).append(" ").append(newExpense)
