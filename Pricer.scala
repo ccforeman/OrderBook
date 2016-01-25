@@ -20,6 +20,7 @@ object Pricer {
 	
 	def main(args: Array[String]) = {
 		// Target-size must be included
+		val start = System.nanoTime()
 		if(args.length ==  0) {
 			System.err.println("Invalid number of arguments.")
 			System.exit(-1)
@@ -39,7 +40,7 @@ object Pricer {
 		}finally {
 			log.close()
 		}
-		
+
 		getExecTime(start)
 	}
 
