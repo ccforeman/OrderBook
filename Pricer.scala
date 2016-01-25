@@ -30,16 +30,16 @@ object Pricer {
 		var book = OrderBook(args(0).toLong)
 		val log = Source.stdin
 
-		try {
+		//try {
 			for(line <- log.getLines()) {
 				var input = line.split("\\s")
 				book.processInput(input)
 			}
-		} catch {
-			case e: Exception => System.err.println("Warning: Encountered error in input.")
-		}finally {
+		//} catch {
+		//	case e: Exception => System.err.println("Warning: Encountered error in input.")
+		//}finally {
 			log.close()
-		}
+		//}
 
 		getExecTime(start)
 	}
