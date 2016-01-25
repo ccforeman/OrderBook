@@ -39,5 +39,13 @@ object Pricer {
 		}finally {
 			log.close()
 		}
+		
+		getExecTime(start)
+	}
+
+	def getExecTime(start: Long) = {
+		val time = System.nanoTime() - start
+		println("Execution time: " + time / 1000000000.0)
+		println(11190024 / (time / 1000000000.0))
 	}
 }
