@@ -55,7 +55,7 @@ class BookSide(side: String, targetSize: Long) {
 	var newOutcome: String = "NA"
 	var oldOutcome: String = "NA"
 
-	var total: Long = 0
+	var totalShares: Long = 0
 	var currentTime: Long = 0
 
 	// Determine if OrderBook sorted order will be ascended or descending
@@ -76,7 +76,7 @@ class BookSide(side: String, targetSize: Long) {
 	def add(entry: Order) = {
 		book += entry
 		bookIndex += (entry.id -> entry)
-		total += entry.size
+		totalShares += entry.size
 		currentTime = entry.time
 		update()
 	}
@@ -93,13 +93,13 @@ class BookSide(side: String, targetSize: Long) {
 			case None => println("Error: No Removal. Order Not Found.")
 		}
 
-		total -= amount
+		totalShares -= amount
 		update()
 	}
 
 	// All flags need to be updated to determine if Pricer will print
 	def update() = {
-		if (total >= target) {
+		if (totalShares >= target) {
 			oldExpense = newExpense
 			oldOutcome = newOutcome
 			newOutcome = transactionSide
