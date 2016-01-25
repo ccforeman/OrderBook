@@ -90,8 +90,10 @@ class BookSide(side: String, targetSize: Long) {
 		order.size -= amount
 		order.time = newTime
 		currentTime = newTime
-		if(order.size <= 0)
+		if(order.size <= 0) {
 			book.remove(order)
+			bookIndex.remove(order.id)
+		}
 
 		totalShares -= amount
 		update()
