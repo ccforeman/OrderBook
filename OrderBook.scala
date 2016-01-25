@@ -11,6 +11,7 @@ object Fields {
 	val Price     = 4
 	val Size      = 5
 
+	// For removals only
 	val RemAmount = 3
 }
 
@@ -26,7 +27,9 @@ case class OrderBook (target: Long) {
 						case "B" => buy.add(Order(input(Time).toLong, input(Id), input(Side), BigDecimal(input(Price)), input(Size).toLong))
 						case "S" => sell.add(Order(input(Time).toLong, input(Id), input(Side), BigDecimal(input(Price)), input(Size).toLong))
 					}
-			case "R" => buy.bookIndex.get(input(Id)) match {
+
+				// Lookup in bookIndex because it's more efficient than looking up in book
+				case "R" => buy.bookIndex.get(input(Id)) match {
 						case Some(buyOrder) => buy.remove(buyOrder, input(RemAmount).toLong, input(Time).toLong)
 						case None => sell.bookIndex.get(input(Id)) match {
 							case Some(sellOrder) => sell.remove(sellOrder, input(RemAmount).toLong, input(Time).toLong)
@@ -61,7 +64,6 @@ class BookSide(side: String, targetSize: Long) {
 	var totalShares: Long = 0
 	var currentTime: Long = 0
 
-	// Determine if OrderBook sorted order will be ascended or descending
 	val sellOrdering = Ordering.by {o: Order => (o.price, o.id) }
 	val buyOrdering = sellOrdering.reverse
 
@@ -70,6 +72,7 @@ class BookSide(side: String, targetSize: Long) {
 	// Effectively constant time lookup to increase scalability; tradeoff for memory footprint
 	var bookIndex = HashMap[String, Order]()
 	
+	// Determine if BookSide sorted order will be ascended or descending
 	if(isBuy)
 		book = TreeSet[Order]()(buyOrdering)
 	else
@@ -85,8 +88,6 @@ class BookSide(side: String, targetSize: Long) {
 	}
 
 	def remove(order: Order, amount: Long, newTime: Long) = {
-
-		// Get Order more efficiently the Book Index
 		order.size -= amount
 		order.time = newTime
 		currentTime = newTime
@@ -141,6 +142,7 @@ class BookSide(side: String, targetSize: Long) {
 		}
 	}
 
+	// Determine if the BookSide object is buy-side or sell-side
 	def isBuy = side == "B"
 
 }
