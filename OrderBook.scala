@@ -26,9 +26,12 @@ case class OrderBook (target: Long) {
 						case "B" => buy.add(Order(input(Time).toLong, input(Id), input(Side), BigDecimal(input(Price)), input(Size).toLong))
 						case "S" => sell.add(Order(input(Time).toLong, input(Id), input(Side), BigDecimal(input(Price)), input(Size).toLong))
 					}
-			case "R" => buy.bookIndex.contains(input(Id)) match {
-						case true => buy.remove(input(Id), input(RemAmount).toLong, input(Time).toLong)
-						case false => sell.remove(input(Id), input(RemAmount).toLong, input(Time).toLong)
+			case "R" => buy.bookIndex.get(input(Id)) match {
+						case Some(buyOrder) => buy.remove(buyOrder, input(RemAmount).toLong, input(Time).toLong)
+						case None => sell.bookIndex.get(input(Id)) match {
+							case Some(sellOrder) => sell.remove(sellOrder, input(RemAmount).toLong, input(Time).toLong)
+							case None => System.err.println("Error: Entry not found for removal.")
+						}
 					}
 		}
 	}
@@ -81,17 +84,14 @@ class BookSide(side: String, targetSize: Long) {
 		update()
 	}
 
-	def remove(id: String, amount: Long, newTime: Long) = {
+	def remove(order: Order, amount: Long, newTime: Long) = {
 
 		// Get Order more efficiently the Book Index
-		bookIndex.get(id) match {
-			case Some(o) => o.size -= amount
-										o.time = newTime
-										currentTime = newTime
-										if(o.size <= 0)
-											book.remove(o)
-			case None => println("Error: No Removal. Order Not Found.")
-		}
+		order.size -= amount
+		order.time = newTime
+		currentTime = newTime
+		if(order.size <= 0)
+			book.remove(order)
 
 		totalShares -= amount
 		update()
