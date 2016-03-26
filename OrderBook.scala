@@ -13,7 +13,7 @@ object Fields {
 
 	// For removals only
 	val RemAmount = 3
-}
+} 
 
 case class OrderBook (target: Long) {
 
