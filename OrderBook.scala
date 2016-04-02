@@ -3,7 +3,6 @@ import scala.collection.mutable.HashMap
 import scala.math.BigDecimal
 import Fields._
 
-// Used as indexes for input
 object Fields {
    val Time      = 0
    val Action    = 1
@@ -42,11 +41,11 @@ case class OrderBook (target: Long) {
 }
 
 case class Order( var time: Long,
-                  val id: String,
-                  val side: String,
-                  val price: BigDecimal,
-                  var size: Long
-               ) {
+                           val id: String,
+                           val side: String,
+                           val price: BigDecimal,
+                           var size: Long
+                           ) {
    
    // Determine what type of Order this is
    def isBuy = side == "B"
