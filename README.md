@@ -28,7 +28,7 @@ The format for Pricer's output is:
 Where 'time' represents the 'time' value of the order that caused this output to occur, 'action' can either be 'B' or 'S' representing a Buy or a Sell, 'total' represents either the total amount of money made if 'action' is 'B', or the total cost incurred if 'action' is 'S'. All fields are delimited by a single space.
 
 # Notes on Implementation
-There are a few comments I'd like to make on my implementation of Pricer and OrderBook. I should mention that this project was developed with performance in mind. However, that wasn't the only consideration because I also wanted to highlight my understanding of certain aspects not only of Scala, but general programming principles i.e. recursion.
+There are a few comments I'd like to make on my implementation of Pricer and OrderBook. I should mention that this project was developed with performance in mind. However, that wasn't the only consideration because I also wanted to highlight my understanding of certain aspects not only of Scala, but general programming principles such as recursion.
 
 In the getExpense method, I intentionally used recursion knowing that there can be a considerable cost because of allocation of a new frame on the stack. However, Scala Streams use lazy evalutation of the tail and head and tail are constant time operations.
 
